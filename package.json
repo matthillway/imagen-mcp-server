@@ -1,0 +1,26 @@
+{
+  "name": "imagen-mcp-server",
+  "version": "1.0.0",
+  "description": "MCP server for Google Imagen 4 image generation and Veo 3 video generation",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "imagen-mcp-server": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts"
+  },
+  "keywords": ["mcp", "imagen", "veo", "google", "ai", "image-generation"],
+  "author": "Matt Fitzgerald",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.0"
+  }
+}
