@@ -15,7 +15,9 @@ const API_KEY = process.env.GOOGLE_AI_API_KEY || process.env.GEMINI_API_KEY;
 const BASE_URL = "https://generativelanguage.googleapis.com/v1beta";
 
 // Output directory for generated files
-const OUTPUT_DIR = process.env.IMAGEN_OUTPUT_DIR || path.join(process.env.HOME || "/tmp", "Pictures/imagen-output");
+const OUTPUT_DIR =
+  process.env.IMAGEN_OUTPUT_DIR ||
+  path.join(process.env.HOME || "/tmp", "Pictures/imagen-output");
 
 // Ensure output directory exists
 if (!fs.existsSync(OUTPUT_DIR)) {
@@ -52,7 +54,7 @@ async function generateImage(params: GenerateImageParams): Promise<string> {
   if (!API_KEY) {
     throw new McpError(
       ErrorCode.InvalidRequest,
-      "GOOGLE_AI_API_KEY or GEMINI_API_KEY environment variable not set"
+      "GOOGLE_AI_API_KEY or GEMINI_API_KEY environment variable not set",
     );
   }
 
@@ -64,8 +66,8 @@ async function generateImage(params: GenerateImageParams): Promise<string> {
     filename,
   } = params;
 
-  // Use Imagen 3 Fast (the one that actually works for image generation)
-  const model = "imagen-3.0-fast-generate-001";
+  // Use Imagen 4 Fast (latest available model)
+  const model = "imagen-4.0-fast-generate-001";
   const url = `${BASE_URL}/models/${model}:predict?key=${API_KEY}`;
 
   const requestBody = {
@@ -90,7 +92,7 @@ async function generateImage(params: GenerateImageParams): Promise<string> {
   if (data.error) {
     throw new McpError(
       ErrorCode.InternalError,
-      `Imagen API error: ${data.error.message}`
+      `Imagen API error: ${data.error.message}`,
     );
   }
 
@@ -112,7 +114,7 @@ async function generateImage(params: GenerateImageParams): Promise<string> {
 
       fs.writeFileSync(
         outputPath,
-        Buffer.from(prediction.bytesBase64Encoded, "base64")
+        Buffer.from(prediction.bytesBase64Encoded, "base64"),
       );
       results.push(outputPath);
     }
@@ -127,14 +129,19 @@ async function generateVideo(params: GenerateVideoParams): Promise<string> {
   if (!API_KEY) {
     throw new McpError(
       ErrorCode.InvalidRequest,
-      "GOOGLE_AI_API_KEY or GEMINI_API_KEY environment variable not set"
+      "GOOGLE_AI_API_KEY or GEMINI_API_KEY environment variable not set",
     );
   }
 
   // Note: Veo video generation may require Vertex AI rather than the generativelanguage API
   // This is a placeholder - actual implementation depends on API availability
 
-  const { prompt, durationSeconds = 4, aspectRatio = "16:9", filename } = params;
+  const {
+    prompt,
+    durationSeconds = 4,
+    aspectRatio = "16:9",
+    filename,
+  } = params;
 
   // Try the Veo endpoint (may need adjustment based on actual API)
   const model = "veo-2.0-generate-001";
@@ -159,7 +166,10 @@ async function generateVideo(params: GenerateVideoParams): Promise<string> {
 
     if (data.error) {
       // If Veo isn't available via this API, provide helpful message
-      if (data.error.code === 404 || data.error.message?.includes("not found")) {
+      if (
+        data.error.code === 404 ||
+        data.error.message?.includes("not found")
+      ) {
         return `Video generation via Veo requires Vertex AI access.
 
 To use Veo 3:
@@ -171,19 +181,21 @@ Prompt saved for reference: "${prompt}"`;
       }
       throw new McpError(
         ErrorCode.InternalError,
-        `Veo API error: ${data.error.message}`
+        `Veo API error: ${data.error.message}`,
       );
     }
 
     // Handle successful video generation
     const timestamp = Date.now();
-    const outputFilename = filename ? `${filename}.mp4` : `veo-${timestamp}.mp4`;
+    const outputFilename = filename
+      ? `${filename}.mp4`
+      : `veo-${timestamp}.mp4`;
     const outputPath = path.join(OUTPUT_DIR, outputFilename);
 
     if (data.predictions?.[0]?.bytesBase64Encoded) {
       fs.writeFileSync(
         outputPath,
-        Buffer.from(data.predictions[0].bytesBase64Encoded, "base64")
+        Buffer.from(data.predictions[0].bytesBase64Encoded, "base64"),
       );
       return `Video saved to: ${outputPath}`;
     }
@@ -193,7 +205,7 @@ Prompt saved for reference: "${prompt}"`;
     if (error instanceof McpError) throw error;
     throw new McpError(
       ErrorCode.InternalError,
-      `Video generation failed: ${error instanceof Error ? error.message : String(error)}`
+      `Video generation failed: ${error instanceof Error ? error.message : String(error)}`,
     );
   }
 }
@@ -202,7 +214,7 @@ async function listModels(): Promise<string> {
   if (!API_KEY) {
     throw new McpError(
       ErrorCode.InvalidRequest,
-      "GOOGLE_AI_API_KEY or GEMINI_API_KEY environment variable not set"
+      "GOOGLE_AI_API_KEY or GEMINI_API_KEY environment variable not set",
     );
   }
 
@@ -211,21 +223,27 @@ async function listModels(): Promise<string> {
   const data = await response.json();
 
   if (data.error) {
-    throw new McpError(ErrorCode.InternalError, `API error: ${data.error.message}`);
+    throw new McpError(
+      ErrorCode.InternalError,
+      `API error: ${data.error.message}`,
+    );
   }
 
   // Filter to image/video generation models
-  const generationModels = data.models?.filter((m: { name: string }) =>
-    m.name.includes("imagen") || m.name.includes("veo")
-  ) || [];
+  const generationModels =
+    data.models?.filter(
+      (m: { name: string }) =>
+        m.name.includes("imagen") || m.name.includes("veo"),
+    ) || [];
 
   if (generationModels.length === 0) {
     return "No image/video generation models found. Available models may require Vertex AI access.";
   }
 
   return generationModels
-    .map((m: { name: string; displayName?: string; description?: string }) =>
-      `${m.name}\n  ${m.displayName || ""}\n  ${m.description || ""}`
+    .map(
+      (m: { name: string; displayName?: string; description?: string }) =>
+        `${m.name}\n  ${m.displayName || ""}\n  ${m.description || ""}`,
     )
     .join("\n\n");
 }
@@ -240,7 +258,7 @@ const server = new Server(
     capabilities: {
       tools: {},
     },
-  }
+  },
 );
 
 // List available tools
@@ -329,11 +347,15 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   try {
     switch (name) {
       case "generate_image": {
-        const result = await generateImage(args as unknown as GenerateImageParams);
+        const result = await generateImage(
+          args as unknown as GenerateImageParams,
+        );
         return { content: [{ type: "text", text: result }] };
       }
       case "generate_video": {
-        const result = await generateVideo(args as unknown as GenerateVideoParams);
+        const result = await generateVideo(
+          args as unknown as GenerateVideoParams,
+        );
         return { content: [{ type: "text", text: result }] };
       }
       case "list_generation_models": {
@@ -347,7 +369,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     if (error instanceof McpError) throw error;
     throw new McpError(
       ErrorCode.InternalError,
-      `Tool execution failed: ${error instanceof Error ? error.message : String(error)}`
+      `Tool execution failed: ${error instanceof Error ? error.message : String(error)}`,
     );
   }
 });
